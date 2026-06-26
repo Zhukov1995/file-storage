@@ -1,0 +1,415 @@
+<!doctype html>
+<html lang="ru" data-theme="system">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>File Storage — консоль</title>
+  <style>
+    :root {
+      --accent: #4f46e5;
+      --accent-weak: #4f46e51a;
+      --radius: 12px;
+      --radius-sm: 8px;
+      --shadow: 0 1px 2px rgba(16,18,27,.06), 0 8px 24px rgba(16,18,27,.05);
+      --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
+      --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    }
+    /* ---- Light (default) ---- */
+    :root, :root[data-theme="light"] {
+      --bg: #fafafb;
+      --surface: #ffffff;
+      --surface-2: #f4f4f7;
+      --text: #1a1a22;
+      --text-dim: #6b6c79;
+      --border: #e6e6ec;
+      --danger: #dc2626;
+      --ok: #16a34a;
+      --chip-bim: #0ea5e9; --chip-bim-bg: #0ea5e91a;
+      --chip-image: #d946ef; --chip-image-bg: #d946ef1a;
+      --chip-svg: #f59e0b; --chip-svg-bg: #f59e0b1a;
+    }
+    /* ---- Dark (explicit) ---- */
+    :root[data-theme="dark"] {
+      --bg: #0f1117;
+      --surface: #171a23;
+      --surface-2: #1e2230;
+      --text: #e7e8ee;
+      --text-dim: #9094a6;
+      --border: #262a36;
+      --accent-weak: #6366f126;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
+      --danger: #f87171;
+      --ok: #4ade80;
+      --chip-bim: #38bdf8; --chip-bim-bg: #38bdf820;
+      --chip-image: #e879f9; --chip-image-bg: #e879f920;
+      --chip-svg: #fbbf24; --chip-svg-bg: #fbbf2420;
+    }
+    /* ---- System: follow OS when data-theme=system ---- */
+    @media (prefers-color-scheme: dark) {
+      :root[data-theme="system"] {
+        --bg: #0f1117;
+        --surface: #171a23;
+        --surface-2: #1e2230;
+        --text: #e7e8ee;
+        --text-dim: #9094a6;
+        --border: #262a36;
+        --accent-weak: #6366f126;
+        --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
+        --danger: #f87171;
+        --ok: #4ade80;
+        --chip-bim: #38bdf8; --chip-bim-bg: #38bdf820;
+        --chip-image: #e879f9; --chip-image-bg: #e879f920;
+        --chip-svg: #fbbf24; --chip-svg-bg: #fbbf2420;
+      }
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; background: var(--bg); color: var(--text);
+      font-family: var(--sans); line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      transition: background .25s ease, color .25s ease;
+    }
+    .wrap { max-width: 1040px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem; }
+
+    header.top {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      gap: 1rem; flex-wrap: wrap; margin-bottom: 1.75rem;
+    }
+    .brand h1 {
+      font-size: 1.5rem; font-weight: 650; letter-spacing: -.02em; margin: 0;
+    }
+    .brand p { margin: .25rem 0 0; color: var(--text-dim); font-size: .9rem; }
+    .brand .dot { color: var(--accent); }
+
+    /* theme segmented control */
+    .theme {
+      display: inline-flex; background: var(--surface-2);
+      border: 1px solid var(--border); border-radius: 999px; padding: 3px;
+    }
+    .theme button {
+      border: 0; background: transparent; color: var(--text-dim);
+      font: inherit; font-size: .82rem; padding: .35rem .7rem;
+      border-radius: 999px; cursor: pointer; display: inline-flex;
+      align-items: center; gap: .35rem; transition: all .15s ease;
+    }
+    .theme button[aria-pressed="true"] {
+      background: var(--surface); color: var(--text);
+      box-shadow: 0 1px 2px rgba(0,0,0,.12);
+    }
+
+    .card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); box-shadow: var(--shadow);
+      padding: 1.25rem 1.35rem; margin-bottom: 1.25rem;
+      transition: background .25s ease, border-color .25s ease;
+    }
+    .card h2 {
+      font-size: .78rem; text-transform: uppercase; letter-spacing: .08em;
+      color: var(--text-dim); font-weight: 600; margin: 0 0 1rem;
+    }
+
+    label.field { display: grid; gap: .3rem; font-size: .82rem; color: var(--text-dim); }
+    input, select {
+      font: inherit; font-size: .9rem; color: var(--text);
+      background: var(--surface-2); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); padding: .55rem .7rem; width: 100%;
+      transition: border-color .15s ease, box-shadow .15s ease;
+    }
+    input:focus, select:focus {
+      outline: none; border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-weak);
+    }
+    input[type="file"] { padding: .4rem; cursor: pointer; }
+
+    .key-row { display: grid; grid-template-columns: 1fr; gap: .75rem; max-width: 420px; }
+    .grid-upload {
+      display: grid; gap: .75rem;
+      grid-template-columns: 1.4fr .8fr 1fr;
+    }
+    .grid-upload .full { grid-column: 1 / -1; }
+    @media (max-width: 640px) { .grid-upload { grid-template-columns: 1fr; } }
+
+    button.btn {
+      font: inherit; font-weight: 550; font-size: .88rem; cursor: pointer;
+      border: 1px solid transparent; border-radius: var(--radius-sm);
+      padding: .55rem 1rem; transition: all .15s ease;
+    }
+    button.btn-primary { background: var(--accent); color: #fff; }
+    button.btn-primary:hover { filter: brightness(1.08); }
+    button.btn-ghost {
+      background: transparent; color: var(--text-dim); border-color: var(--border);
+      padding: .35rem .6rem; font-size: .8rem;
+    }
+    button.btn-ghost:hover { color: var(--text); border-color: var(--accent); }
+    button.btn-danger { color: var(--danger); }
+
+    .toolbar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: .9rem; flex-wrap: wrap; }
+    .toolbar .filter { display: inline-flex; align-items: center; gap: .5rem; font-size: .82rem; color: var(--text-dim); }
+    .toolbar .filter select { width: auto; }
+    .count { font-size: .8rem; color: var(--text-dim); font-variant-numeric: tabular-nums; }
+
+    table { border-collapse: collapse; width: 100%; font-size: .88rem; }
+    thead th {
+      text-align: left; font-weight: 600; font-size: .72rem;
+      text-transform: uppercase; letter-spacing: .06em; color: var(--text-dim);
+      padding: .5rem .65rem; border-bottom: 1px solid var(--border);
+    }
+    tbody td { padding: .7rem .65rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+    tbody tr:last-child td { border-bottom: 0; }
+    tbody tr:hover td { background: var(--surface-2); }
+    .id { font-family: var(--mono); font-size: .82rem; color: var(--text-dim); font-variant-numeric: tabular-nums; }
+    .name { font-weight: 550; }
+    .folder { font-family: var(--mono); font-size: .82rem; color: var(--text-dim); }
+
+    .chip {
+      display: inline-block; font-size: .73rem; font-weight: 600;
+      padding: .12rem .5rem; border-radius: 999px; letter-spacing: .01em;
+    }
+    .chip[data-cat="bim"] { color: var(--chip-bim); background: var(--chip-bim-bg); }
+    .chip[data-cat="image"] { color: var(--chip-image); background: var(--chip-image-bg); }
+    .chip[data-cat="svg"] { color: var(--chip-svg); background: var(--chip-svg-bg); }
+    .tags { display: flex; flex-wrap: wrap; gap: .25rem; }
+    .tag { font-size: .72rem; color: var(--text-dim); background: var(--surface-2); border: 1px solid var(--border); border-radius: 6px; padding: .05rem .4rem; }
+    .actions { white-space: nowrap; text-align: right; }
+
+    .inline-form {
+      display: grid; gap: .5rem; margin-top: .6rem; padding: .75rem;
+      background: var(--surface-2); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); max-width: 360px;
+    }
+    .inline-form .row { display: flex; gap: .4rem; }
+
+    .empty { text-align: center; color: var(--text-dim); padding: 2.5rem 1rem; font-size: .9rem; }
+    .toast {
+      position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%) translateY(2rem);
+      background: var(--surface); border: 1px solid var(--border); color: var(--text);
+      padding: .7rem 1.1rem; border-radius: var(--radius-sm); box-shadow: var(--shadow);
+      font-size: .86rem; opacity: 0; pointer-events: none; transition: all .25s ease; z-index: 50;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .toast.err { border-color: var(--danger); }
+    .toast .mark { color: var(--ok); font-weight: 700; margin-right: .4rem; }
+    .toast.err .mark { color: var(--danger); }
+
+    @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="top">
+      <div class="brand">
+        <h1>File Storage<span class="dot">.</span></h1>
+        <p>Консоль хранилища — загрузка, правка и удаление файлов через REST API.</p>
+      </div>
+      <div class="theme" role="group" aria-label="Тема оформления">
+        <button data-theme-val="light" aria-pressed="false">☀ Светлая</button>
+        <button data-theme-val="system" aria-pressed="true">◐ Система</button>
+        <button data-theme-val="dark" aria-pressed="false">☾ Тёмная</button>
+      </div>
+    </header>
+
+    <section class="card">
+      <h2>Доступ</h2>
+      <div class="key-row">
+        <label class="field">API-ключ
+          <input id="apikey" placeholder="change-me-dev-key" value="change-me-dev-key" />
+        </label>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Загрузить файл</h2>
+      <form id="up" class="grid-upload">
+        <label class="field">Имя
+          <input name="name" placeholder="Например: Корпус А" required />
+        </label>
+        <label class="field">Категория
+          <select name="category">
+            <option value="bim">bim · .ifc</option>
+            <option value="image">image · png/jpg</option>
+            <option value="svg">svg</option>
+          </select>
+        </label>
+        <label class="field">Папка
+          <input name="folder" placeholder="/проект-1" value="/" />
+        </label>
+        <label class="field full">Теги
+          <input name="tags" placeholder="через, запятую" />
+        </label>
+        <label class="field full">Файл
+          <input type="file" name="file" required />
+        </label>
+        <div class="full">
+          <button type="submit" class="btn btn-primary">Загрузить</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="card">
+      <div class="toolbar">
+        <h2 style="margin:0">Файлы</h2>
+        <div style="display:flex; gap:1rem; align-items:center;">
+          <span class="filter">Категория
+            <select id="filter">
+              <option value="">все</option>
+              <option value="bim">bim</option>
+              <option value="image">image</option>
+              <option value="svg">svg</option>
+            </select>
+          </span>
+          <span class="count" id="count"></span>
+        </div>
+      </div>
+      <table>
+        <thead><tr>
+          <th>ID</th><th>Имя</th><th>Категория</th><th>Папка</th><th>Теги</th><th></th>
+        </tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+      <div class="empty" id="empty" hidden>Пока нет файлов. Загрузите первый выше.</div>
+    </section>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // REST: GET/POST /files, GET /files/{id}, PATCH /files/{id}, PUT /files/{id}/content, DELETE /files/{id}
+    const $ = (s) => document.querySelector(s);
+    const key = () => $('#apikey').value;
+    const api = (p, opt = {}) => fetch('/' + p, {
+      ...opt, headers: { ...(opt.headers || {}), 'X-API-Key': key() },
+    });
+    const esc = (s) => String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+    let toastTimer;
+    function toast(msg, isErr) {
+      const t = $('#toast');
+      t.innerHTML = `<span class="mark">${isErr ? '!' : '✓'}</span>${esc(msg)}`;
+      t.classList.toggle('err', !!isErr);
+      t.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
+    }
+
+    // ---- theme ----
+    const THEME_KEY = 'fs-theme';
+    function applyTheme(val) {
+      document.documentElement.setAttribute('data-theme', val);
+      document.querySelectorAll('.theme button').forEach((b) =>
+        b.setAttribute('aria-pressed', String(b.dataset.themeVal === val)));
+      localStorage.setItem(THEME_KEY, val);
+    }
+    document.querySelectorAll('.theme button').forEach((b) =>
+      b.onclick = () => applyTheme(b.dataset.themeVal));
+    applyTheme(localStorage.getItem(THEME_KEY) || 'system');
+
+    // ---- list ----
+    async function refresh() {
+      const cat = $('#filter').value;
+      const r = await api('files' + (cat ? `?category=${cat}` : ''));
+      if (!r.ok) { toast('Не удалось загрузить список: ' + (await r.text()), true); return; }
+      const rows = await r.json();
+      const tb = $('#rows');
+      tb.innerHTML = '';
+      $('#count').textContent = rows.length + (rows.length === 1 ? ' файл' : ' файл(ов)');
+      $('#empty').hidden = rows.length > 0;
+      for (const f of rows) {
+        const tr = document.createElement('tr');
+        const tags = (f.tags || []).map((t) => `<span class="tag">${esc(t)}</span>`).join('');
+        tr.innerHTML = `
+          <td class="id">${f.id}</td>
+          <td class="name">${esc(f.name)}</td>
+          <td><span class="chip" data-cat="${esc(f.category)}">${esc(f.category)}</span></td>
+          <td class="folder">${esc(f.folder)}</td>
+          <td><div class="tags">${tags}</div></td>
+          <td class="actions">
+            <button class="btn btn-ghost btn-edit">изменить</button>
+            <button class="btn btn-ghost btn-replace">заменить</button>
+            <button class="btn btn-ghost btn-danger btn-del">удалить</button>
+          </td>`;
+        const cell = tr.querySelector('.actions');
+
+        tr.querySelector('.btn-del').onclick = async () => {
+          if (!confirm(`Удалить «${f.name}»?`)) return;
+          const r = await api('files/' + f.id, { method: 'DELETE' });
+          if (!r.ok) { toast('Ошибка удаления: ' + (await r.text()), true); return; }
+          toast('Файл удалён'); refresh();
+        };
+
+        tr.querySelector('.btn-edit').onclick = () => {
+          const open = cell.querySelector('.edit-form');
+          cell.querySelectorAll('.inline-form').forEach((n) => n.remove());
+          if (open) return;
+          const form = document.createElement('form');
+          form.className = 'inline-form edit-form';
+          form.innerHTML = `
+            <input name="name" value="${esc(f.name)}" placeholder="имя" />
+            <select name="category">
+              ${['bim', 'image', 'svg'].map((c) =>
+                `<option value="${c}"${c === f.category ? ' selected' : ''}>${c}</option>`).join('')}
+            </select>
+            <input name="folder" value="${esc(f.folder)}" placeholder="/папка" />
+            <input name="tags" value="${esc((f.tags || []).join(','))}" placeholder="теги,через,запятую" />
+            <div class="row">
+              <button type="submit" class="btn btn-primary">Сохранить</button>
+              <button type="button" class="btn btn-ghost cancel">Отмена</button>
+            </div>`;
+          form.querySelector('.cancel').onclick = () => form.remove();
+          form.onsubmit = async (e) => {
+            e.preventDefault();
+            const body = {
+              name: form.name.value, category: form.category.value, folder: form.folder.value,
+              tags: form.tags.value.split(',').map((t) => t.trim()).filter(Boolean),
+            };
+            const r = await api('files/' + f.id, {
+              method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+            });
+            if (!r.ok) { toast('Ошибка изменения: ' + (await r.text()), true); return; }
+            toast('Изменения сохранены'); refresh();
+          };
+          cell.appendChild(form);
+        };
+
+        tr.querySelector('.btn-replace').onclick = () => {
+          const open = cell.querySelector('.replace-form');
+          cell.querySelectorAll('.inline-form').forEach((n) => n.remove());
+          if (open) return;
+          const form = document.createElement('form');
+          form.className = 'inline-form replace-form';
+          form.innerHTML = `
+            <input type="file" name="file" required />
+            <div class="row">
+              <button type="submit" class="btn btn-primary">Заменить</button>
+              <button type="button" class="btn btn-ghost cancel">Отмена</button>
+            </div>`;
+          form.querySelector('.cancel').onclick = () => form.remove();
+          form.onsubmit = async (e) => {
+            e.preventDefault();
+            const fd = new FormData();
+            fd.append('file', form.file.files[0]);
+            const r = await api('files/' + f.id + '/content', { method: 'PUT', body: fd });
+            if (!r.ok) { toast('Ошибка замены файла: ' + (await r.text()), true); return; }
+            toast('Файл заменён'); refresh();
+          };
+          cell.appendChild(form);
+        };
+
+        tb.appendChild(tr);
+      }
+    }
+
+    $('#up').onsubmit = async (e) => {
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      const r = await api('files', { method: 'POST', body: fd });
+      if (!r.ok) { toast('Ошибка загрузки: ' + (await r.text()), true); return; }
+      e.target.reset();
+      toast('Файл загружен'); refresh();
+    };
+    $('#filter').onchange = refresh;
+    refresh();
+  </script>
+</body>
+</html>
