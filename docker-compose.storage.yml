@@ -7,7 +7,10 @@ services:
     environment:
       MINIO_ROOT_USER: minioadmin
       MINIO_ROOT_PASSWORD: minioadmin
-    ports: ["9000:9000", "9001:9001"]
+    # Host ports moved to 9100/9101 to avoid clashing with Superset's
+    # frontend dev-server (which uses :9000). In-container ports stay 9000/9001,
+    # so file-storage (S3_ENDPOINT=http://minio:9000) is unaffected.
+    ports: ["9100:9000", "9101:9001"]
     volumes: ["minio_data:/data"]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
@@ -40,7 +43,17 @@ services:
     depends_on:
       minio: {condition: service_healthy}
       postgres: {condition: service_started}
+    networks:
+      - default
+      - superset_shared
 
 volumes:
   minio_data:
   pg_data:
+
+networks:
+  # Shared bridge so the Superset proxy (separate compose stack) can reach
+  # this service by the hostname "file-storage". Created externally:
+  #   docker network create superset_shared
+  superset_shared:
+    external: true
