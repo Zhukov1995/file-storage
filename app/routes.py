@@ -67,7 +67,24 @@ def get_file(file_id: int, svc: FileService = Depends(get_service)):
     return FileOut(**out)
 
 
-@router.get("/files/{file_id}/content")
+@router.get(
+    "/files/{file_id}/content",
+    summary="Stream raw file content",
+    description=(
+        "Streams the raw bytes of the stored object with its original "
+        "`Content-Type` and an `inline` `Content-Disposition`, so clients "
+        "(e.g. an in-app preview or a server-side proxy) can render or "
+        "download the file without a presigned MinIO URL."
+    ),
+    responses={
+        200: {
+            "description": "Raw file bytes streamed with the original content type.",
+            "content": {"application/octet-stream": {"schema": {"type": "string", "format": "binary"}}},
+        },
+        404: {"description": "File not found"},
+        502: {"description": "Object storage error"},
+    },
+)
 def get_content(file_id: int, svc: FileService = Depends(get_service)):
     try:
         rec = svc.get(file_id)
