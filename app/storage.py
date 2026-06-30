@@ -51,3 +51,8 @@ class ObjectStore:
             Params={"Bucket": self._bucket, "Key": object_key},
             ExpiresIn=expires,
         )
+
+    def get_stream(self, object_key: str):
+        """Return a streaming, file-like body for the object's bytes."""
+        obj = self._client.get_object(Bucket=self._bucket, Key=object_key)
+        return obj["Body"]

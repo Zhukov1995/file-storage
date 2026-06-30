@@ -17,6 +17,7 @@ class FakeStore:
     def delete(self, key): self.objs.pop(key, None)
     def exists(self, key): return key in self.objs
     def presigned_get(self, key, expires=3600): return f"http://minio/{key}"
+    def get_stream(self, key): return io.BytesIO(self.objs[key])
 
 
 def make_db():

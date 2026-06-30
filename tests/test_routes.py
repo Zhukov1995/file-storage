@@ -75,6 +75,42 @@ def test_upload_bad_category_422():
     assert resp.status_code == 422
 
 
+def test_get_content_requires_key():
+    resp = client.post(
+        "/files", headers=KEY,
+        files={"file": ("c.svg", b"<svg>content</svg>", "image/svg+xml")},
+        data={"name": "Content", "category": "svg"},
+    )
+    fid = resp.json()["id"]
+    no_key = client.get(f"/files/{fid}/content")
+    assert no_key.status_code == 401
+    client.delete(f"/files/{fid}", headers=KEY)
+
+
+def test_get_content_returns_bytes():
+    body = b"<svg>stream-me</svg>"
+    resp = client.post(
+        "/files", headers=KEY,
+        files={"file": ("s.svg", body, "image/svg+xml")},
+        data={"name": "Streamed", "category": "svg"},
+    )
+    assert resp.status_code == 201, resp.text
+    fid = resp.json()["id"]
+
+    got = client.get(f"/files/{fid}/content", headers=KEY)
+    assert got.status_code == 200
+    assert got.content == body
+    assert got.headers["content-type"].startswith("image/svg+xml")
+    assert "s.svg" in got.headers["content-disposition"]
+
+    client.delete(f"/files/{fid}", headers=KEY)
+
+
+def test_get_content_missing_404():
+    resp = client.get("/files/999999/content", headers=KEY)
+    assert resp.status_code == 404
+
+
 # I6: botocore errors map to 502
 def test_upload_store_error_returns_502():
     """When the object store raises BotoCoreError during upload, route returns 502."""

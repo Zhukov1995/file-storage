@@ -1,6 +1,7 @@
 import json
 from typing import List, Optional
 from fastapi import APIRouter, Depends, UploadFile, File, Form, HTTPException, Response
+from fastapi.responses import StreamingResponse
 from botocore.exceptions import ClientError, BotoCoreError
 from app.auth import require_api_key
 from app.db import get_db
@@ -64,6 +65,22 @@ def get_file(file_id: int, svc: FileService = Depends(get_service)):
     except _STORE_ERRORS as e:
         raise HTTPException(status_code=502, detail=f"Object storage error: {e}")
     return FileOut(**out)
+
+
+@router.get("/files/{file_id}/content")
+def get_content(file_id: int, svc: FileService = Depends(get_service)):
+    try:
+        rec = svc.get(file_id)
+        body = svc.store.get_stream(rec.object_key)
+    except KeyError:
+        raise HTTPException(status_code=404, detail="Not found")
+    except _STORE_ERRORS as e:
+        raise HTTPException(status_code=502, detail=f"Object storage error: {e}")
+    return StreamingResponse(
+        body,
+        media_type=rec.content_type or "application/octet-stream",
+        headers={"Content-Disposition": f'inline; filename="{rec.file_name}"'},
+    )
 
 
 @router.patch("/files/{file_id}", response_model=FileOut)
