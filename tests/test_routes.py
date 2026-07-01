@@ -111,6 +111,64 @@ def test_get_content_missing_404():
     assert resp.status_code == 404
 
 
+def test_upload_response_has_uuid():
+    resp = client.post(
+        "/files", headers=KEY,
+        files={"file": ("u.svg", b"<svg/>", "image/svg+xml")},
+        data={"name": "UUIDTest", "category": "svg"},
+    )
+    assert resp.status_code == 201, resp.text
+    data = resp.json()
+    assert "uuid" in data
+    assert data["uuid"] and len(data["uuid"]) == 36
+    client.delete(f"/files/{data['id']}", headers=KEY)
+
+
+def test_get_by_uuid_matches_get_by_id():
+    resp = client.post(
+        "/files", headers=KEY,
+        files={"file": ("v.svg", b"<svg/>", "image/svg+xml")},
+        data={"name": "ByUUID", "category": "svg"},
+    )
+    assert resp.status_code == 201, resp.text
+    data = resp.json()
+    fid = data["id"]
+    fuuid = data["uuid"]
+
+    by_id = client.get(f"/files/{fid}", headers=KEY)
+    by_uuid = client.get(f"/files/{fuuid}", headers=KEY)
+    assert by_id.status_code == 200
+    assert by_uuid.status_code == 200
+    assert by_id.json()["id"] == by_uuid.json()["id"]
+    assert by_id.json()["uuid"] == by_uuid.json()["uuid"]
+
+    client.delete(f"/files/{fid}", headers=KEY)
+
+
+def test_get_content_by_uuid():
+    body = b"<svg>uuid-content</svg>"
+    resp = client.post(
+        "/files", headers=KEY,
+        files={"file": ("w.svg", body, "image/svg+xml")},
+        data={"name": "ContentByUUID", "category": "svg"},
+    )
+    assert resp.status_code == 201, resp.text
+    data = resp.json()
+    fuuid = data["uuid"]
+
+    got = client.get(f"/files/{fuuid}/content", headers=KEY)
+    assert got.status_code == 200
+    assert got.content == body
+
+    client.delete(f"/files/{data['id']}", headers=KEY)
+
+
+def test_get_unknown_uuid_returns_404():
+    fake_uuid = "00000000-0000-0000-0000-000000000000"
+    resp = client.get(f"/files/{fake_uuid}", headers=KEY)
+    assert resp.status_code == 404
+
+
 # I6: botocore errors map to 502
 def test_upload_store_error_returns_502():
     """When the object store raises BotoCoreError during upload, route returns 502."""

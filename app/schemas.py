@@ -4,6 +4,7 @@ from pydantic import BaseModel
 
 class FileOut(BaseModel):
     id: int
+    uuid: str
     name: str
     category: str
     folder: str

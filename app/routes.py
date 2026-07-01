@@ -54,10 +54,10 @@ def list_files(category: Optional[str] = None, folder: Optional[str] = None,
     return [FileOut(**r.to_dict()) for r in rows]
 
 
-@router.get("/files/{file_id}", response_model=FileOut)
-def get_file(file_id: int, svc: FileService = Depends(get_service)):
+@router.get("/files/{file_ref}", response_model=FileOut)
+def get_file(file_ref: str, svc: FileService = Depends(get_service)):
     try:
-        rec = svc.get(file_id)
+        rec = svc.get_by_ref(file_ref)
         out = rec.to_dict()
         out["download_url"] = svc.store.presigned_get(rec.object_key)
     except KeyError:
@@ -68,13 +68,14 @@ def get_file(file_id: int, svc: FileService = Depends(get_service)):
 
 
 @router.get(
-    "/files/{file_id}/content",
+    "/files/{file_ref}/content",
     summary="Stream raw file content",
     description=(
         "Streams the raw bytes of the stored object with its original "
         "`Content-Type` and an `inline` `Content-Disposition`, so clients "
         "(e.g. an in-app preview or a server-side proxy) can render or "
-        "download the file without a presigned MinIO URL."
+        "download the file without a presigned MinIO URL. "
+        "`file_ref` accepts either the integer `id` or the UUID string."
     ),
     responses={
         200: {
@@ -85,9 +86,9 @@ def get_file(file_id: int, svc: FileService = Depends(get_service)):
         502: {"description": "Object storage error"},
     },
 )
-def get_content(file_id: int, svc: FileService = Depends(get_service)):
+def get_content(file_ref: str, svc: FileService = Depends(get_service)):
     try:
-        rec = svc.get(file_id)
+        rec = svc.get_by_ref(file_ref)
         body = svc.store.get_stream(rec.object_key)
     except KeyError:
         raise HTTPException(status_code=404, detail="Not found")
@@ -100,10 +101,11 @@ def get_content(file_id: int, svc: FileService = Depends(get_service)):
     )
 
 
-@router.patch("/files/{file_id}", response_model=FileOut)
-def patch_file(file_id: int, body: FilePatch, svc: FileService = Depends(get_service)):
+@router.patch("/files/{file_ref}", response_model=FileOut)
+def patch_file(file_ref: str, body: FilePatch, svc: FileService = Depends(get_service)):
     try:
-        rec = svc.update(file_id, **body.model_dump(exclude_unset=True))
+        rec = svc.get_by_ref(file_ref)
+        rec = svc.update(rec.id, **body.model_dump(exclude_unset=True))
     except KeyError:
         raise HTTPException(status_code=404, detail="Not found")
     except ValueError as e:
@@ -111,11 +113,12 @@ def patch_file(file_id: int, body: FilePatch, svc: FileService = Depends(get_ser
     return FileOut(**rec.to_dict())
 
 
-@router.put("/files/{file_id}/content", response_model=FileOut)
-def replace_content(file_id: int, file: UploadFile = File(...),
+@router.put("/files/{file_ref}/content", response_model=FileOut)
+def replace_content(file_ref: str, file: UploadFile = File(...),
                     svc: FileService = Depends(get_service)):
     try:
-        rec = svc.replace_content(file_id, file.filename, file.file, file.content_type)
+        rec = svc.get_by_ref(file_ref)
+        rec = svc.replace_content(rec.id, file.filename, file.file, file.content_type)
     except KeyError:
         raise HTTPException(status_code=404, detail="Not found")
     except ValueError as e:
@@ -125,10 +128,11 @@ def replace_content(file_id: int, file: UploadFile = File(...),
     return FileOut(**rec.to_dict())
 
 
-@router.delete("/files/{file_id}", status_code=204)
-def delete_file(file_id: int, svc: FileService = Depends(get_service)):
+@router.delete("/files/{file_ref}", status_code=204)
+def delete_file(file_ref: str, svc: FileService = Depends(get_service)):
     try:
-        svc.delete(file_id)
+        rec = svc.get_by_ref(file_ref)
+        svc.delete(rec.id)
     except KeyError:
         raise HTTPException(status_code=404, detail="Not found")
     except _STORE_ERRORS as e:

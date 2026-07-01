@@ -59,6 +59,16 @@ class FileService:
             raise KeyError(id)
         return rec
 
+    def get_by_ref(self, ref: str) -> FileRecord:
+        """Resolve a file reference that may be an integer id or a UUID string."""
+        if ref.isdigit():
+            rec = self.db.get(FileRecord, int(ref))
+        else:
+            rec = self.db.query(FileRecord).filter(FileRecord.uuid == ref).first()
+        if rec is None:
+            raise KeyError(ref)
+        return rec
+
     def update(self, id: int, **fields) -> FileRecord:
         rec = self.get(id)
         for f in ("name", "category", "folder", "tags"):

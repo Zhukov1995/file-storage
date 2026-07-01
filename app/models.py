@@ -4,6 +4,7 @@ from sqlalchemy import String, BigInteger, DateTime, JSON, func
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.types import TypeDecorator, Text
 import json
+import uuid as uuid_module
 from app.db import Base
 
 
@@ -24,6 +25,10 @@ class FileRecord(Base):
     __tablename__ = "files"
 
     id: Mapped[int] = mapped_column(primary_key=True)
+    uuid: Mapped[str] = mapped_column(
+        String(36), unique=True, index=True,
+        default=lambda: str(uuid_module.uuid4()),
+    )
     name: Mapped[str] = mapped_column(String(255))
     category: Mapped[str] = mapped_column(String(64), index=True)
     folder: Mapped[str] = mapped_column(String(512), default="/", index=True)
@@ -42,6 +47,7 @@ class FileRecord(Base):
     def to_dict(self) -> dict:
         return {
             "id": self.id,
+            "uuid": self.uuid,
             "name": self.name,
             "category": self.category,
             "folder": self.folder,
