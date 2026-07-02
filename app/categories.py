@@ -1,7 +1,7 @@
 import os
 
 CATEGORIES = {
-    "bim":   {"ext": [".ifc"], "max_mb": 500},
+    "bim":   {"ext": [".ifc", ".xkt", ".glb", ".gltf"], "max_mb": 500},
     "image": {"ext": [".png", ".jpg", ".jpeg", ".webp"], "max_mb": 50},
     "svg":   {"ext": [".svg"], "max_mb": 5},
 }
