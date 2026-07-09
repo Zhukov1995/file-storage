@@ -1,0 +1,8 @@
+{
+  "name": "file-storage",
+  "private": true,
+  "description": "Release tooling for the file-storage service. The service itself is Python (see app/); this package.json only exposes `npm run release`.",
+  "scripts": {
+    "release": "bash scripts/release.sh"
+  }
+}
