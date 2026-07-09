@@ -8,7 +8,7 @@
 
 - **REST API + Swagger** — `http://localhost:8000/docs`
 - **Веб-консоль** (загрузка/правка/удаление, тёмная/светлая тема) — `http://localhost:8000/`
-- **Хранилище** — MinIO (S3-совместимое), консоль `http://localhost:9001`
+- **Хранилище** — MinIO (S3-совместимое), консоль `http://localhost:9101`
 
 ---
 
@@ -54,7 +54,13 @@ curl localhost:8000/healthz        # -> {"status":"ok"}
 |-----|-----|--------|
 | Веб-консоль | http://localhost:8000/ | API-ключ вводится на странице |
 | Swagger (API) | http://localhost:8000/docs | заголовок `X-API-Key` |
-| MinIO-консоль | http://localhost:9001 | `minioadmin` / `minioadmin` |
+| MinIO-консоль | http://localhost:9101 | `minioadmin` / `minioadmin` |
+| Postgres (реестр) | `localhost:5442` | `superset` / `superset` |
+
+> Хостовые порты `9100/9101` (MinIO) и `5442` (Postgres) сдвинуты относительно
+> стандартных `9000/9001/5432`, чтобы не конфликтовать с фронтовым dev-server
+> Superset (`:9000`) и его собственным Postgres. Внутри docker-сети сервисы
+> по-прежнему общаются по `minio:9000` и `postgres:5432` — эти адреса не меняются.
 
 **API-ключ по умолчанию:** `change-me-dev-key` (поменяй в `.env`, переменная `API_KEY`).
 
