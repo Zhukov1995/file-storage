@@ -78,4 +78,4 @@ git push origin HEAD
 git push origin "$NEW_TAG"
 
 echo "Done. Tagged and pushed ${NEW_TAG}."
-echo "Watch the build: https://github.com/Zhukov1995/file-storage/actions"
+echo "Watch the build: https://github.com/TechPeopleOrg/file-storage/actions"
